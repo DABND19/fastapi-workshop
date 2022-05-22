@@ -1,7 +1,9 @@
+import csv
 from http import HTTPStatus
-from typing import List, Optional
+from typing import BinaryIO, List, Optional
 
 from fastapi import Depends, HTTPException
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from workshop.db import get_session
@@ -75,4 +77,23 @@ class OperationsService:
         with self.session.begin():
             operation = self.get_operation(user_id, operation_id)
             self.session.delete(operation)
+            self.session.flush()
+
+    def import_operations(self, user_id: int, file: BinaryIO) -> None:
+        try:
+            parsed_operations = [
+                OperationCreateSchema.parse_obj(record)
+                for record in csv.DictReader(
+                    map(lambda line: line.decode('utf-8'), file), 
+                    skipinitialspace=True
+                )
+            ]
+        except ValidationError:
+            return
+
+        with self.session.begin():
+            self.session.add_all([
+                Operation(user_id=user_id, **payload.dict())
+                for payload in parsed_operations
+            ])
             self.session.flush()

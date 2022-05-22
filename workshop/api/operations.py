@@ -2,18 +2,21 @@ from http import HTTPStatus
 from typing import List, Optional
 
 from fastapi import (
-    APIRouter, 
-    Depends, 
-    Query, 
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Query,
     Path,
-    Response
+    Response,
+    UploadFile
 )
 
 from workshop.db.models import OperationType
 from workshop.services import OperationsService, get_current_user_id
 from workshop.schemas import (
-    OperationSchema, 
-    OperationCreateSchema, 
+    OperationSchema,
+    OperationCreateSchema,
     OperationUpdateSchema
 )
 
@@ -32,7 +35,7 @@ def get_operations(
 
 @router.post('/', response_model=OperationSchema)
 def create_operation(
-    payload: OperationCreateSchema, 
+    payload: OperationCreateSchema,
     user_id: int = Depends(get_current_user_id),
     service: OperationsService = Depends()
 ):
@@ -66,3 +69,18 @@ def delete_operation(
 ):
     service.delete_operation(user_id, operation_id)
     return Response(status_code=HTTPStatus.NO_CONTENT)
+
+
+@router.post('/import')
+def import_operations(
+    background_tasks: BackgroundTasks,
+    service: OperationsService = Depends(),
+    user_id: int = Depends(get_current_user_id),
+    body: UploadFile = File(...)
+):
+    background_tasks.add_task(
+        service.import_operations,
+        user_id,
+        body.file
+    )
+    return Response()

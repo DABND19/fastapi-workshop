@@ -27,3 +27,4 @@ class OperationUpdateSchema(OperationCreateSchema):
 class OperationSchema(OperationBaseSchema):
     id: int
     created_at: datetime
+    updated_at: datetime

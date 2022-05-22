@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 
-from workshop.services import get_current_user_id, UsersService
+from workshop.services import strict_authorizer, UsersService
 from workshop.schemas import (
-    UserSchema, 
-    UserUpdateSchema, 
+    UserSchema,
+    UserUpdateSchema,
     SelfUserSchema
 )
 
@@ -13,8 +13,8 @@ router = APIRouter(prefix='/users', tags=['Users'])
 
 @router.get('/me', response_model=SelfUserSchema)
 def get_self(
-    service: UsersService = Depends(), 
-    user_id: int = Depends(get_current_user_id)
+    service: UsersService = Depends(),
+    user_id: int = Depends(strict_authorizer)
 ):
     return service.get_user_with_id(user_id)
 
@@ -23,7 +23,7 @@ def get_self(
 def update_self(
     payload: UserUpdateSchema,
     service: UsersService = Depends(),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(strict_authorizer)
 ):
     return service.update_user(user_id, payload)
 

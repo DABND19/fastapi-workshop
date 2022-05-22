@@ -154,8 +154,20 @@ class AuthService:
         return self.create_json_web_tokens(user)
 
 
-security = HTTPBearer()
+http_bearer_security = HTTPBearer(auto_error=False)
 
 
-def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(security)) -> UserId:
+def strict_authorizer(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(http_bearer_security)
+) -> UserId:
+    if not credentials:
+        raise HTTPException(HTTPStatus.UNAUTHORIZED)
+    return AuthService.validate_access_token(credentials.credentials)
+
+
+def unstrict_authorizer(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(http_bearer_security)
+) -> Optional[UserId]:
+    if not credentials:
+        return None
     return AuthService.validate_access_token(credentials.credentials)
